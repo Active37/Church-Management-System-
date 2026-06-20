@@ -86,6 +86,51 @@ service cloud.firestore {
         && data.createdAt is string;
     }
 
+    function isValidVolunteerSchedule(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.eventId is string && data.eventId.size() <= 128
+        && data.eventTitle is string && data.eventTitle.size() <= 200
+        && data.dateTime is string && data.dateTime.size() <= 100
+        && data.roleName is string && data.roleName.size() <= 100
+        && data.memberId is string && data.memberId.size() <= 128
+        && data.memberName is string && data.memberName.size() <= 100
+        && data.memberEmail is string && data.memberEmail.size() <= 100
+        && data.status is string && (data.status == 'Assigned' || data.status == 'Confirmed' || data.status == 'Declined')
+        && data.requirements is string && data.requirements.size() <= 1000;
+    }
+
+    function isValidAnnouncement(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 5000
+        && data.senderName is string && data.senderName.size() <= 100
+        && data.senderEmail is string && data.senderEmail.size() <= 100
+        && data.category is string && (data.category == 'General' || data.category == 'Urgent' || data.category == 'Ministry')
+        && data.createdAt is string;
+    }
+
+    function isValidChatMessage(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.groupId is string && data.groupId.size() <= 128
+        && data.groupName is string && data.groupName.size() <= 100
+        && data.senderId is string && data.senderId.size() <= 128
+        && data.senderName is string && data.senderName.size() <= 100
+        && data.senderEmail is string && data.senderEmail.size() <= 100
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 2000
+        && data.createdAt is string;
+    }
+
+    function isValidEventFeedback(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.eventId is string && data.eventId.size() <= 128
+        && data.eventTitle is string && data.eventTitle.size() <= 200
+        && data.rating is number && data.rating >= 1 && data.rating <= 5
+        && data.comment is string && data.comment.size() <= 2000
+        && data.submitterName is string && data.submitterName.size() <= 100
+        && data.submitterEmail is string && data.submitterEmail.size() <= 100
+        && data.createdAt is string;
+    }
+
     // --- Collections ---
 
     // Members Collection
@@ -136,6 +181,42 @@ service cloud.firestore {
       allow update: if isEmailVerified() && isValidId(eventId) && isValidEvent(incoming())
         && incoming().createdAt == existing().createdAt; // Immutability guard
       allow delete: if isEmailVerified() && isValidId(eventId);
+    }
+
+    // Volunteer Schedules Collection
+    match /volunteer_schedules/{scheduleId} {
+      allow get: if isEmailVerified() && isValidId(scheduleId);
+      allow list: if isEmailVerified() && resource.data.status is string;
+      allow create: if isEmailVerified() && isValidId(scheduleId) && isValidVolunteerSchedule(incoming());
+      allow update: if isEmailVerified() && isValidId(scheduleId) && isValidVolunteerSchedule(incoming());
+      allow delete: if isEmailVerified() && isValidId(scheduleId);
+    }
+
+    // Announcements Collection
+    match /announcements/{announcementId} {
+      allow get: if isEmailVerified() && isValidId(announcementId);
+      allow list: if isEmailVerified() && resource.data.title is string;
+      allow create: if isEmailVerified() && isValidId(announcementId) && isValidAnnouncement(incoming());
+      allow update: if isEmailVerified() && isValidId(announcementId) && isValidAnnouncement(incoming());
+      allow delete: if isEmailVerified() && isValidId(announcementId);
+    }
+
+    // Chats Collection
+    match /chats/{chatId} {
+      allow get: if isEmailVerified() && isValidId(chatId);
+      allow list: if isEmailVerified() && resource.data.senderId is string;
+      allow create: if isEmailVerified() && isValidId(chatId) && isValidChatMessage(incoming());
+      allow update: if isEmailVerified() && isValidId(chatId) && isValidChatMessage(incoming());
+      allow delete: if isEmailVerified() && isValidId(chatId);
+    }
+
+    // Feedbacks Collection
+    match /feedbacks/{feedbackId} {
+      allow get: if isEmailVerified() && isValidId(feedbackId);
+      allow list: if isEmailVerified() && resource.data.eventId is string;
+      allow create: if isEmailVerified() && isValidId(feedbackId) && isValidEventFeedback(incoming());
+      allow update: if isEmailVerified() && isValidId(feedbackId) && isValidEventFeedback(incoming());
+      allow delete: if isEmailVerified() && isValidId(feedbackId);
     }
   }
 }

@@ -65,3 +65,49 @@ export interface ChurchStats {
     donations: number;
   };
 }
+
+export interface VolunteerSchedule {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  dateTime: string;
+  roleName: string;
+  memberId: string;
+  memberName: string;
+  memberEmail: string;
+  status: 'Assigned' | 'Confirmed' | 'Declined';
+  requirements: string;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  senderName: string;
+  senderEmail: string;
+  category: 'General' | 'Urgent' | 'Ministry';
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  groupId: string;
+  groupName: string;
+  senderId: string;
+  senderName: string;
+  senderEmail: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface EventFeedback {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  rating: number; // 1 to 5
+  comment: string;
+  submitterName: string;
+  submitterEmail: string;
+  createdAt: string;
+}
+

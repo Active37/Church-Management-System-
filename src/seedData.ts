@@ -1,4 +1,4 @@
-import { Member, Department, Event, Finance, Attendance } from './types';
+import { Member, Department, Event, Finance, Attendance, VolunteerSchedule, Announcement, ChatMessage, EventFeedback } from './types';
 
 export const SEED_MEMBERS: Member[] = [
   {
@@ -267,3 +267,120 @@ export const SEED_ATTENDANCE: Attendance[] = [
     recordedAt: '2026-06-14T09:20:00.000Z'
   }
 ];
+
+export const SEED_VOLUNTEER_SCHEDULES: VolunteerSchedule[] = [
+  {
+    id: 'sched_1',
+    eventId: 'evt_1',
+    eventTitle: 'Sunday Worship Encounter',
+    dateTime: '2026-06-21T09:00:00.000Z',
+    roleName: 'Lead Keyboardist',
+    memberId: 'mem_1',
+    memberName: 'Praise Bankole',
+    memberEmail: 'bankolepraise3@gmail.com',
+    status: 'Confirmed',
+    requirements: 'Rehearse keyboard vocal chords Saturday 4:30 PM. Power on the dual Stage Nord layers.'
+  },
+  {
+    id: 'sched_2',
+    eventId: 'evt_1',
+    eventTitle: 'Sunday Worship Encounter',
+    dateTime: '2026-06-21T09:00:00.000Z',
+    roleName: 'Primary Soprano Solos',
+    memberId: 'mem_2',
+    memberName: 'Sarah Jenkins',
+    memberEmail: 'sarah.j@example.com',
+    status: 'Assigned',
+    requirements: 'Wear the Choir blue custom robes. Be at the stage tuning booth by 8:15 AM.'
+  },
+  {
+    id: 'sched_3',
+    eventId: 'evt_2',
+    eventTitle: 'Midweek Power Study & Communion',
+    dateTime: '2026-06-24T18:30:00.000Z',
+    roleName: 'Sound Desk Operator',
+    memberId: 'mem_4',
+    memberName: 'Michael Chen',
+    memberEmail: 'm.chen@example.com',
+    status: 'Confirmed',
+    requirements: 'Perform handheld wireless mic gains checks. Secure standard broadcast line feed streams.'
+  }
+];
+
+export const SEED_ANNOUNCEMENTS: Announcement[] = [
+  {
+    id: 'ann_1',
+    title: 'Mid-Year Sanctuary Restoration Campaign',
+    content: 'We are launching our mid-year prayer initiative. We require additional volunteer support for stage microphone setups and door greeters. Please register availability in the registry scheduler.',
+    senderName: 'Rev. Mark Peterson',
+    senderEmail: 'pastor.mark@example.com',
+    category: 'General',
+    createdAt: '2026-06-15T12:00:00.000Z'
+  },
+  {
+    id: 'ann_2',
+    title: 'CHOIR HARMONY TIME RE-ALIGNMENT',
+    content: 'Saturday preparatory vocal harmonies practice is rescheduled to 4:45 PM. Group chord configurations will be completed before standard corporate prayers.',
+    senderName: 'Praise Bankole',
+    senderEmail: 'bankolepraise3@gmail.com',
+    category: 'Urgent',
+    createdAt: '2026-06-18T16:30:00.000Z'
+  }
+];
+
+export const SEED_CHAT_MESSAGES: ChatMessage[] = [
+  {
+    id: 'msg_1',
+    groupId: 'general',
+    groupName: 'General Saints Channel',
+    senderId: 'mem_1',
+    senderName: 'Praise Bankole',
+    senderEmail: 'bankolepraise3@gmail.com',
+    content: 'Welcome saints to our interactive Sanctuary secure channel! Let us keep our communications aligned with spiritual and administrative excellence.',
+    createdAt: '2026-06-19T10:00:00.000Z'
+  },
+  {
+    id: 'msg_2',
+    groupId: 'Choir',
+    groupName: 'Choir Department',
+    senderId: 'mem_1',
+    senderName: 'Praise Bankole',
+    senderEmail: 'bankolepraise3@gmail.com',
+    content: 'Vocal leads - please review the midi guide chord progressions before Saturday afternoon reviews.',
+    createdAt: '2026-06-19T14:30:00.000Z'
+  },
+  {
+    id: 'msg_3',
+    groupId: 'Choir',
+    groupName: 'Choir Department',
+    senderId: 'mem_2',
+    senderName: 'Sarah Jenkins',
+    senderEmail: 'sarah.j@example.com',
+    content: 'Copied Bro Praise! The Alto and Soprano sections have matched our vocal guides successfully.',
+    createdAt: '2026-06-19T15:00:00.000Z'
+  }
+];
+
+export const SEED_FEEDBACKS: EventFeedback[] = [
+  {
+    id: 'feed_1',
+    eventId: 'evt_1',
+    eventTitle: 'Sunday Worship Encounter',
+    rating: 5,
+    comment: 'The worship acoustics and song selections were incredibly aligned with the spirit of the sermon. Beautifully coordinated experience.',
+    submitterName: 'Sarah Jenkins',
+    submitterEmail: 'sarah.j@example.com',
+    createdAt: '2026-06-15T13:00:00.000Z'
+  },
+  {
+    id: 'feed_2',
+    eventId: 'evt_1',
+    eventTitle: 'Sunday Worship Encounter',
+    rating: 4,
+    comment: 'Strong sermon outlines by Reverend Mark. Seat support in row B was somewhat tight, but the ushers accommodated late arrivals wonderfully.',
+    submitterName: 'John Doe',
+    submitterEmail: 'john.usher@example.com',
+    createdAt: '2026-06-15T14:00:00.000Z'
+  }
+];
+

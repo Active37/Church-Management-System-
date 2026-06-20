@@ -28,14 +28,22 @@ import {
   Department, 
   Event, 
   Finance, 
-  Attendance 
+  Attendance,
+  VolunteerSchedule,
+  Announcement,
+  ChatMessage,
+  EventFeedback
 } from './types';
 import { 
   SEED_MEMBERS, 
   SEED_DEPARTMENTS, 
   SEED_FINANCES, 
   SEED_ATTENDANCE, 
-  SEED_EVENTS 
+  SEED_EVENTS,
+  SEED_VOLUNTEER_SCHEDULES,
+  SEED_ANNOUNCEMENTS,
+  SEED_CHAT_MESSAGES,
+  SEED_FEEDBACKS
 } from './seedData';
 
 // Views
@@ -45,6 +53,9 @@ import { AttendanceTracker } from './components/AttendanceTracker';
 import { FinanceManager } from './components/FinanceManager';
 import { DepartmentsManager } from './components/DepartmentsManager';
 import { EventsManager } from './components/EventsManager';
+import { VolunteerScheduler } from './components/VolunteerScheduler';
+import { CommunicationHub } from './components/CommunicationHub';
+import { EventFeedbackSystem } from './components/EventFeedbackSystem';
 
 // Lucide Icons
 import { 
@@ -59,7 +70,11 @@ import {
   Grid,
   CheckCircle,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Megaphone,
+  UserCheck,
+  Smile,
+  Volume2
 } from 'lucide-react';
 
 export default function App() {
@@ -73,6 +88,10 @@ export default function App() {
   const [events, setEvents] = useState<Event[]>([]);
   const [finances, setFinances] = useState<Finance[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
+  const [schedules, setSchedules] = useState<VolunteerSchedule[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [feedbacks, setFeedbacks] = useState<EventFeedback[]>([]);
   const [dbLoading, setDbLoading] = useState(true);
 
   // Connection validation
@@ -115,8 +134,28 @@ export default function App() {
     const unsubAttendance = onSnapshot(collection(db, 'attendance'), (snapshot) => {
       const data = snapshot.docs.map(doc => doc.data() as Attendance);
       setAttendance(data);
-      setDbLoading(false);
     }, (err) => handleFirestoreError(err, OperationType.GET, 'attendance'));
+
+    const unsubSchedules = onSnapshot(collection(db, 'volunteer_schedules'), (snapshot) => {
+      const data = snapshot.docs.map(doc => doc.data() as VolunteerSchedule);
+      setSchedules(data);
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'volunteer_schedules'));
+
+    const unsubAnnouncements = onSnapshot(collection(db, 'announcements'), (snapshot) => {
+      const data = snapshot.docs.map(doc => doc.data() as Announcement);
+      setAnnouncements(data.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'announcements'));
+
+    const unsubChats = onSnapshot(collection(db, 'chats'), (snapshot) => {
+      const data = snapshot.docs.map(doc => doc.data() as ChatMessage);
+      setChatMessages(data.sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'chats'));
+
+    const unsubFeedbacks = onSnapshot(collection(db, 'feedbacks'), (snapshot) => {
+      const data = snapshot.docs.map(doc => doc.data() as EventFeedback);
+      setFeedbacks(data.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setDbLoading(false);
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'feedbacks'));
 
     return () => {
       unsubMembers();
@@ -124,6 +163,10 @@ export default function App() {
       unsubEvents();
       unsubFinances();
       unsubAttendance();
+      unsubSchedules();
+      unsubAnnouncements();
+      unsubChats();
+      unsubFeedbacks();
     };
   }, [currentUser]);
 
@@ -150,6 +193,22 @@ export default function App() {
       // Seed Attendance
       for (const a of SEED_ATTENDANCE) {
         await createDocument('attendance', a);
+      }
+      // Seed Volunteer Schedules
+      for (const s of SEED_VOLUNTEER_SCHEDULES) {
+        await createDocument('volunteer_schedules', s);
+      }
+      // Seed Announcements
+      for (const an of SEED_ANNOUNCEMENTS) {
+        await createDocument('announcements', an);
+      }
+      // Seed Chats
+      for (const c of SEED_CHAT_MESSAGES) {
+        await createDocument('chats', c);
+      }
+      // Seed Feedbacks
+      for (const f of SEED_FEEDBACKS) {
+        await createDocument('feedbacks', f);
       }
       alert('Vault seeded beautifully with high-fidelity workspace records!');
     } catch (error) {
@@ -229,6 +288,55 @@ export default function App() {
     if (confirm('Are you sure you want to cancel this event schedule?')) {
       await deleteDocument('events', id);
     }
+  };
+
+  const handleAddSchedule = async (payload: Omit<VolunteerSchedule, 'id'>) => {
+    const id = `sched_${Date.now()}`;
+    const newSched: VolunteerSchedule = {
+      ...payload,
+      id
+    };
+    await createDocument<VolunteerSchedule>('volunteer_schedules', newSched);
+  };
+
+  const handleUpdateSchedule = async (id: string, updates: Partial<VolunteerSchedule>) => {
+    await updateDocument<VolunteerSchedule>('volunteer_schedules', id, updates);
+  };
+
+  const handleDeleteSchedule = async (id: string) => {
+    if (confirm('Are you sure you want to delete this volunteer assignment?')) {
+      await deleteDocument('volunteer_schedules', id);
+    }
+  };
+
+  const handleAddAnnouncement = async (payload: Omit<Announcement, 'id' | 'createdAt'>) => {
+    const id = `ann_${Date.now()}`;
+    const newAnn: Announcement = {
+      ...payload,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    await createDocument<Announcement>('announcements', newAnn);
+  };
+
+  const handleAddChatMessage = async (payload: Omit<ChatMessage, 'id' | 'createdAt'>) => {
+    const id = `msg_${Date.now()}`;
+    const newMsg: ChatMessage = {
+      ...payload,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    await createDocument<ChatMessage>('chats', newMsg);
+  };
+
+  const handleAddFeedback = async (payload: Omit<EventFeedback, 'id' | 'createdAt'>) => {
+    const id = `feed_${Date.now()}`;
+    const newFeedback: EventFeedback = {
+      ...payload,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    await createDocument<EventFeedback>('feedbacks', newFeedback);
   };
 
   // Auth screen layout
@@ -375,6 +483,40 @@ export default function App() {
               <Calendar className="w-4 h-4" />
               <span>Calendar Schedules</span>
             </button>
+
+            <div className="pt-4 pb-1 border-t border-slate-800/60 my-2">
+              <span className="text-[9px] uppercase font-bold text-slate-500 tracking-widest px-4 block">Coordinators Hub</span>
+            </div>
+
+            <button 
+              onClick={() => setActiveTab('schedules')}
+              className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'schedules' ? 'bg-sky-600 text-white shadow-sm font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+              }`}
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Volunteer Duties</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('comms')}
+              className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'comms' ? 'bg-sky-600 text-white shadow-sm font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+              }`}
+            >
+              <Megaphone className="w-4 h-4" />
+              <span>Communication Hub</span>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('feedback')}
+              className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'feedback' ? 'bg-sky-600 text-white shadow-sm font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+              }`}
+            >
+              <Smile className="w-4 h-4" />
+              <span>Event Feedback Map</span>
+            </button>
           </nav>
         </div>
 
@@ -460,6 +602,37 @@ export default function App() {
                 onAddEvent={handleAddEvent}
                 onUpdateEvent={handleUpdateEvent}
                 onDeleteEvent={handleDeleteEvent}
+              />
+            )}
+            {activeTab === 'schedules' && (
+              <VolunteerScheduler 
+                schedules={schedules}
+                members={members}
+                events={events}
+                currentUserEmail={currentUser?.email}
+                onAddSchedule={handleAddSchedule}
+                onUpdateSchedule={handleUpdateSchedule}
+                onDeleteSchedule={handleDeleteSchedule}
+              />
+            )}
+            {activeTab === 'comms' && (
+              <CommunicationHub 
+                announcements={announcements}
+                chatMessages={chatMessages}
+                members={members}
+                currentUserEmail={currentUser?.email}
+                currentUserName={currentUser?.displayName}
+                onAddAnnouncement={handleAddAnnouncement}
+                onAddChatMessage={handleAddChatMessage}
+              />
+            )}
+            {activeTab === 'feedback' && (
+              <EventFeedbackSystem 
+                events={events}
+                feedbacks={feedbacks}
+                currentUserEmail={currentUser?.email}
+                currentUserName={currentUser?.displayName}
+                onAddFeedback={handleAddFeedback}
               />
             )}
           </div>
