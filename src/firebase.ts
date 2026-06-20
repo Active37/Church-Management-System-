@@ -15,9 +15,21 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
+// Support override from custom environment variables if deployed separately (e.g., on Netlify)
+const finalConfig = {
+  apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
+  authDomain: (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
+  projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
+  storageBucket: (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
+  messagingSenderId: (import.meta as any).env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId,
+  appId: (import.meta as any).env.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
+  measurementId: (import.meta as any).env.VITE_FIREBASE_MEASUREMENT_ID || firebaseConfig.measurementId,
+  firestoreDatabaseId: (import.meta as any).env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId,
+};
+
 // Initialize Firebase App and services
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId); /* CRITICAL: Must specify firestoreDatabaseId */
+const app = initializeApp(finalConfig);
+export const db = getFirestore(app, finalConfig.firestoreDatabaseId || undefined); /* CRITICAL: Must specify firestoreDatabaseId */
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
