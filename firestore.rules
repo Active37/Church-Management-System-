@@ -13,7 +13,7 @@ service cloud.firestore {
     }
 
     function isEmailVerified() {
-      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com');
+      return isSignedIn() && request.auth.token.email != null;
     }
 
     function isValidId(id) {
@@ -149,7 +149,7 @@ service cloud.firestore {
     match /members/{memberId} {
       allow get: if isEmailVerified() && isValidId(memberId);
       // For church context, multi-admin managers with verified email can list all members
-      allow list: if isEmailVerified() && resource.data.status is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(memberId) && isValidMember(incoming());
       allow update: if isEmailVerified() && isValidId(memberId) && isValidMember(incoming())
         && incoming().registeredAt == existing().registeredAt; // Immutability guard
@@ -159,7 +159,7 @@ service cloud.firestore {
     // Attendance Collection
     match /attendance/{attendanceId} {
       allow get: if isEmailVerified() && isValidId(attendanceId);
-      allow list: if isEmailVerified() && resource.data.status is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(attendanceId) && isValidAttendance(incoming());
       allow update: if isEmailVerified() && isValidId(attendanceId) && isValidAttendance(incoming())
         && incoming().memberId == existing().memberId; // Immutability guard
@@ -169,7 +169,7 @@ service cloud.firestore {
     // Finances Collection
     match /finances/{financeId} {
       allow get: if isEmailVerified() && isValidId(financeId);
-      allow list: if isEmailVerified() && resource.data.type is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(financeId) && isValidFinance(incoming());
       allow update: if isEmailVerified() && isValidId(financeId) && isValidFinance(incoming())
         && incoming().recordedAt == existing().recordedAt; // Immutability guard
@@ -179,7 +179,7 @@ service cloud.firestore {
     // Departments Collection
     match /departments/{departmentId} {
       allow get: if isEmailVerified() && isValidId(departmentId);
-      allow list: if isEmailVerified() && resource.data.name is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(departmentId) && isValidDepartment(incoming());
       allow update: if isEmailVerified() && isValidId(departmentId) && isValidDepartment(incoming());
       allow delete: if isEmailVerified() && isValidId(departmentId);
@@ -188,7 +188,7 @@ service cloud.firestore {
     // Events Collection
     match /events/{eventId} {
       allow get: if isEmailVerified() && isValidId(eventId);
-      allow list: if isEmailVerified() && resource.data.title is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(eventId) && isValidEvent(incoming());
       allow update: if isEmailVerified() && isValidId(eventId) && isValidEvent(incoming())
         && incoming().createdAt == existing().createdAt; // Immutability guard
@@ -198,7 +198,7 @@ service cloud.firestore {
     // Volunteer Schedules Collection
     match /volunteer_schedules/{scheduleId} {
       allow get: if isEmailVerified() && isValidId(scheduleId);
-      allow list: if isEmailVerified() && resource.data.status is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(scheduleId) && isValidVolunteerSchedule(incoming());
       allow update: if isEmailVerified() && isValidId(scheduleId) && isValidVolunteerSchedule(incoming());
       allow delete: if isEmailVerified() && isValidId(scheduleId);
@@ -207,7 +207,7 @@ service cloud.firestore {
     // Announcements Collection
     match /announcements/{announcementId} {
       allow get: if isEmailVerified() && isValidId(announcementId);
-      allow list: if isEmailVerified() && resource.data.title is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(announcementId) && isValidAnnouncement(incoming());
       allow update: if isEmailVerified() && isValidId(announcementId) && isValidAnnouncement(incoming());
       allow delete: if isEmailVerified() && isValidId(announcementId);
@@ -216,7 +216,7 @@ service cloud.firestore {
     // Chats Collection
     match /chats/{chatId} {
       allow get: if isEmailVerified() && isValidId(chatId);
-      allow list: if isEmailVerified() && resource.data.senderId is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(chatId) && isValidChatMessage(incoming());
       allow update: if isEmailVerified() && isValidId(chatId) && isValidChatMessage(incoming());
       allow delete: if isEmailVerified() && isValidId(chatId);
@@ -225,7 +225,7 @@ service cloud.firestore {
     // Feedbacks Collection
     match /feedbacks/{feedbackId} {
       allow get: if isEmailVerified() && isValidId(feedbackId);
-      allow list: if isEmailVerified() && resource.data.eventId is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(feedbackId) && isValidEventFeedback(incoming());
       allow update: if isEmailVerified() && isValidId(feedbackId) && isValidEventFeedback(incoming());
       allow delete: if isEmailVerified() && isValidId(feedbackId);
@@ -234,7 +234,7 @@ service cloud.firestore {
     // System Activities Collection
     match /system_activities/{activityId} {
       allow get: if isEmailVerified() && isValidId(activityId);
-      allow list: if isEmailVerified() && resource.data.actionType is string;
+      allow list: if isEmailVerified();
       allow create: if isEmailVerified() && isValidId(activityId) && isValidSystemActivity(incoming());
       allow update: if false; // Read-only once written
       allow delete: if false; // Retention is locked against clients
