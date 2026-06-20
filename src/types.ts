@@ -111,3 +111,15 @@ export interface EventFeedback {
   createdAt: string;
 }
 
+export interface SystemActivity {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userEmail: string;
+  actionType: 'Modification' | 'Deletion';
+  targetType: 'Member' | 'Event';
+  targetId: string;
+  targetName: string;
+  details: string;
+}
+

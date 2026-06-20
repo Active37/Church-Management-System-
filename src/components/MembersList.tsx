@@ -34,7 +34,9 @@ export const MembersList: React.FC<MembersListProps> = ({
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          member.phone.includes(searchTerm);
+                          member.phone.includes(searchTerm) ||
+                          member.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          member.role.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDept = deptFilter === 'All' || member.department === deptFilter;
     const matchesStatus = statusFilter === 'All' || member.status === statusFilter;
     return matchesSearch && matchesDept && matchesStatus;
@@ -111,10 +113,10 @@ export const MembersList: React.FC<MembersListProps> = ({
           <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search by name, email, phone..." 
+            placeholder="Search by name, phone, or ministry group..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 focus:ring-2 focus:ring-sky-500 bg-white border border-slate-200 rounded-lg text-xs outline-none transition-all placeholder:text-slate-400"
+            className="w-full pl-9 pr-4 py-2 focus:ring-2 focus:ring-sky-500 bg-white border border-slate-200 rounded-lg text-xs outline-none transition-all placeholder:text-slate-400 font-medium"
           />
         </div>
 

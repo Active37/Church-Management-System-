@@ -131,6 +131,18 @@ service cloud.firestore {
         && data.createdAt is string;
     }
 
+    function isValidSystemActivity(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.timestamp is string
+        && data.userId is string && data.userId.size() <= 128
+        && data.userEmail is string && data.userEmail.size() <= 128
+        && data.actionType is string && (data.actionType == 'Modification' || data.actionType == 'Deletion')
+        && data.targetType is string && (data.targetType == 'Member' || data.targetType == 'Event')
+        && data.targetId is string && data.targetId.size() <= 128
+        && data.targetName is string && data.targetName.size() <= 200
+        && data.details is string && data.details.size() <= 2000;
+    }
+
     // --- Collections ---
 
     // Members Collection
@@ -217,6 +229,15 @@ service cloud.firestore {
       allow create: if isEmailVerified() && isValidId(feedbackId) && isValidEventFeedback(incoming());
       allow update: if isEmailVerified() && isValidId(feedbackId) && isValidEventFeedback(incoming());
       allow delete: if isEmailVerified() && isValidId(feedbackId);
+    }
+
+    // System Activities Collection
+    match /system_activities/{activityId} {
+      allow get: if isEmailVerified() && isValidId(activityId);
+      allow list: if isEmailVerified() && resource.data.actionType is string;
+      allow create: if isEmailVerified() && isValidId(activityId) && isValidSystemActivity(incoming());
+      allow update: if false; // Read-only once written
+      allow delete: if false; // Retention is locked against clients
     }
   }
 }

@@ -145,6 +145,23 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "eventId", "eventTitle", "rating", "createdAt"]
+    },
+    "SystemActivity": {
+      "title": "System Activity",
+      "description": "Logged deletions or modifications to crucial system profiles.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "actionType": { "type": "string", "enum": ["Modification", "Deletion"] },
+        "targetType": { "type": "string", "enum": ["Member", "Event"] },
+        "targetId": { "type": "string" },
+        "targetName": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "userId", "userEmail", "actionType", "targetType", "targetId", "targetName", "details"]
     }
   },
   "firestore": {
@@ -183,6 +200,10 @@
     "/feedbacks/{feedbackId}": {
       "schema": "EventFeedback",
       "description": "Collection of post-event feedback survey responses."
+    },
+    "/system_activities/{activityId}": {
+      "schema": "SystemActivity",
+      "description": "Collection of custom critical system operations logged synchronously."
     }
   }
 }

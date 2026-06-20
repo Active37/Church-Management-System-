@@ -1,4 +1,4 @@
-import { Member, Department, Event, Finance, Attendance, VolunteerSchedule, Announcement, ChatMessage, EventFeedback } from './types';
+import { Member, Department, Event, Finance, Attendance, VolunteerSchedule, Announcement, ChatMessage, EventFeedback, SystemActivity } from './types';
 
 export const SEED_MEMBERS: Member[] = [
   {
@@ -381,6 +381,31 @@ export const SEED_FEEDBACKS: EventFeedback[] = [
     submitterName: 'John Doe',
     submitterEmail: 'john.usher@example.com',
     createdAt: '2026-06-15T14:00:00.000Z'
+  }
+];
+
+export const SEED_SYSTEM_ACTIVITIES: SystemActivity[] = [
+  {
+    id: 'act_1',
+    timestamp: '2026-06-19T09:15:00.000Z',
+    userId: 'user_pastor',
+    userEmail: 'pastor.mark@example.com',
+    actionType: 'Modification',
+    targetType: 'Event',
+    targetId: 'evt_2',
+    targetName: 'Midweek Power Study & Communion',
+    details: 'Updated location from Library Room to Fellowship Hall'
+  },
+  {
+    id: 'act_2',
+    timestamp: '2026-06-19T10:20:00.000Z',
+    userId: 'user_admin',
+    userEmail: 'bankolepraise3@gmail.com',
+    actionType: 'Modification',
+    targetType: 'Member',
+    targetId: 'mem_6',
+    targetName: 'Rev. Mark Peterson',
+    details: 'Changed phone number and status parameters'
   }
 ];
 

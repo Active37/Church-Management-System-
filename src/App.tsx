@@ -32,7 +32,8 @@ import {
   VolunteerSchedule,
   Announcement,
   ChatMessage,
-  EventFeedback
+  EventFeedback,
+  SystemActivity
 } from './types';
 import { 
   SEED_MEMBERS, 
@@ -43,7 +44,8 @@ import {
   SEED_VOLUNTEER_SCHEDULES,
   SEED_ANNOUNCEMENTS,
   SEED_CHAT_MESSAGES,
-  SEED_FEEDBACKS
+  SEED_FEEDBACKS,
+  SEED_SYSTEM_ACTIVITIES
 } from './seedData';
 
 // Views
@@ -56,6 +58,7 @@ import { EventsManager } from './components/EventsManager';
 import { VolunteerScheduler } from './components/VolunteerScheduler';
 import { CommunicationHub } from './components/CommunicationHub';
 import { EventFeedbackSystem } from './components/EventFeedbackSystem';
+import { SystemActivityLog } from './components/SystemActivityLog';
 
 // Lucide Icons
 import { 
@@ -74,7 +77,8 @@ import {
   Megaphone,
   UserCheck,
   Smile,
-  Volume2
+  Volume2,
+  ShieldAlert
 } from 'lucide-react';
 
 export default function App() {
@@ -92,6 +96,7 @@ export default function App() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [feedbacks, setFeedbacks] = useState<EventFeedback[]>([]);
+  const [activities, setActivities] = useState<SystemActivity[]>([]);
   const [dbLoading, setDbLoading] = useState(true);
 
   // Connection validation
@@ -154,8 +159,13 @@ export default function App() {
     const unsubFeedbacks = onSnapshot(collection(db, 'feedbacks'), (snapshot) => {
       const data = snapshot.docs.map(doc => doc.data() as EventFeedback);
       setFeedbacks(data.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-      setDbLoading(false);
     }, (err) => handleFirestoreError(err, OperationType.GET, 'feedbacks'));
+
+    const unsubActivities = onSnapshot(collection(db, 'system_activities'), (snapshot) => {
+      const data = snapshot.docs.map(doc => doc.data() as SystemActivity);
+      setActivities(data.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+      setDbLoading(false);
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'system_activities'));
 
     return () => {
       unsubMembers();
@@ -167,6 +177,7 @@ export default function App() {
       unsubAnnouncements();
       unsubChats();
       unsubFeedbacks();
+      unsubActivities();
     };
   }, [currentUser]);
 
@@ -210,12 +221,44 @@ export default function App() {
       for (const f of SEED_FEEDBACKS) {
         await createDocument('feedbacks', f);
       }
+      // Seed System Activities
+      for (const act of SEED_SYSTEM_ACTIVITIES) {
+        await createDocument('system_activities', act);
+      }
       alert('Vault seeded beautifully with high-fidelity workspace records!');
     } catch (error) {
       console.error('Seeding error:', error);
       alert('Failed to seed. Please check database configuration details.');
     } finally {
       setDbLoading(false);
+    }
+  };
+
+  // --- System Activity Logging ---
+
+  const logSystemActivity = async (
+    actionType: 'Modification' | 'Deletion',
+    targetType: 'Member' | 'Event',
+    targetId: string,
+    targetName: string,
+    details: string
+  ) => {
+    try {
+      const id = `act_${Date.now()}`;
+      const newActivity: SystemActivity = {
+        id,
+        timestamp: new Date().toISOString(),
+        userId: currentUser?.uid || 'anonymous',
+        userEmail: currentUser?.email || 'unknown@example.com',
+        actionType,
+        targetType,
+        targetId,
+        targetName,
+        details
+      };
+      await createDocument<SystemActivity>('system_activities', newActivity);
+    } catch (err) {
+      console.error('Failed to log system activity:', err);
     }
   };
 
@@ -232,12 +275,35 @@ export default function App() {
   };
 
   const handleUpdateMember = async (id: string, updates: Partial<Member>) => {
+    const existingMember = members.find(m => m.id === id);
     await updateDocument<Member>('members', id, updates);
+    if (existingMember) {
+      const changes: string[] = [];
+      Object.keys(updates).forEach(key => {
+        const val = (updates as any)[key];
+        const oldVal = (existingMember as any)[key];
+        if (val !== undefined && val !== oldVal) {
+          changes.push(`Updated ${key} from "${oldVal}" to "${val}"`);
+        }
+      });
+      const details = changes.length > 0 ? changes.join(', ') : 'Profile parameters updated';
+      await logSystemActivity('Modification', 'Member', id, existingMember.name, details);
+    }
   };
 
   const handleDeleteMember = async (id: string) => {
+    const existingMember = members.find(m => m.id === id);
     if (confirm('Are you sure you want to permanently delete this member profile?')) {
       await deleteDocument('members', id);
+      if (existingMember) {
+        await logSystemActivity(
+          'Deletion',
+          'Member',
+          id,
+          existingMember.name,
+          `Deleted profile of member "${existingMember.name}" (${existingMember.email})`
+        );
+      }
     }
   };
 
@@ -281,12 +347,35 @@ export default function App() {
   };
 
   const handleUpdateEvent = async (id: string, updates: Partial<Event>) => {
+    const existingEvent = events.find(e => e.id === id);
     await updateDocument<Event>('events', id, updates);
+    if (existingEvent) {
+      const changes: string[] = [];
+      Object.keys(updates).forEach(key => {
+        const val = (updates as any)[key];
+        const oldVal = (existingEvent as any)[key];
+        if (val !== undefined && val !== oldVal) {
+          changes.push(`Updated ${key} value to "${val}"`);
+        }
+      });
+      const details = changes.length > 0 ? changes.join(', ') : 'Event parameters modified';
+      await logSystemActivity('Modification', 'Event', id, existingEvent.title, details);
+    }
   };
 
   const handleDeleteEvent = async (id: string) => {
+    const existingEvent = events.find(e => e.id === id);
     if (confirm('Are you sure you want to cancel this event schedule?')) {
       await deleteDocument('events', id);
+      if (existingEvent) {
+        await logSystemActivity(
+          'Deletion',
+          'Event',
+          id,
+          existingEvent.title,
+          `Cancelled corporate event registry "${existingEvent.title}" scheduled for ${existingEvent.dateTime}`
+        );
+      }
     }
   };
 
@@ -517,6 +606,16 @@ export default function App() {
               <Smile className="w-4 h-4" />
               <span>Event Feedback Map</span>
             </button>
+
+            <button 
+              onClick={() => setActiveTab('activities')}
+              className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'activities' ? 'bg-sky-600 text-white shadow-sm font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+              }`}
+            >
+              <ShieldAlert className="w-4 h-4" />
+              <span>System Activity Log</span>
+            </button>
           </nav>
         </div>
 
@@ -633,6 +732,11 @@ export default function App() {
                 currentUserEmail={currentUser?.email}
                 currentUserName={currentUser?.displayName}
                 onAddFeedback={handleAddFeedback}
+              />
+            )}
+            {activeTab === 'activities' && (
+              <SystemActivityLog 
+                activities={activities}
               />
             )}
           </div>
