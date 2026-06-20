@@ -1,0 +1,141 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (default-deny catch-all)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Hardened Reusable Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Specific Validators ---
+
+    function isValidMember(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.email is string && data.email.size() <= 100
+        && data.phone is string && data.phone.size() <= 30
+        && data.department is string && data.department.size() <= 100
+        && data.role is string && data.role.size() <= 100
+        && data.status is string && (data.status == 'Active' || data.status == 'Inactive')
+        && data.notes is string && data.notes.size() <= 1000
+        && data.registeredAt is string;
+    }
+
+    function isValidAttendance(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.eventId is string && data.eventId.size() <= 128
+        && data.eventTitle is string && data.eventTitle.size() <= 200
+        && data.date is string && data.date.size() <= 50
+        && data.memberId is string && data.memberId.size() <= 128
+        && data.memberName is string && data.memberName.size() <= 100
+        && data.status is string && (data.status == 'Present' || data.status == 'Absent' || data.status == 'Excused')
+        && data.recordedBy is string && data.recordedBy.size() <= 120
+        && data.recordedAt is string;
+    }
+
+    function isValidFinance(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.type is string && (data.type == 'Tithe' || data.type == 'Offering' || data.type == 'Donation' || data.type == 'Other')
+        && data.amount is number && data.amount >= 0
+        && data.date is string && data.date.size() <= 50
+        && data.donorName is string && data.donorName.size() <= 100
+        && data.memberId is string && data.memberId.size() <= 128
+        && data.notes is string && data.notes.size() <= 1000
+        && data.recordedBy is string && data.recordedBy.size() <= 120
+        && data.recordedAt is string;
+    }
+
+    function isValidDepartment(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.leaderName is string && data.leaderName.size() <= 100
+        && data.leaderId is string && data.leaderId.size() <= 128
+        && data.description is string && data.description.size() <= 1000
+        && data.meetingTime is string && data.meetingTime.size() <= 100;
+    }
+
+    function isValidEvent(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.description is string && data.description.size() <= 1000
+        && data.dateTime is string
+        && data.location is string && data.location.size() <= 200
+        && data.category is string && data.category.size() <= 100
+        && data.registrationsCount is number && data.registrationsCount >= 0
+        && data.createdAt is string;
+    }
+
+    // --- Collections ---
+
+    // Members Collection
+    match /members/{memberId} {
+      allow get: if isEmailVerified() && isValidId(memberId);
+      // For church context, multi-admin managers with verified email can list all members
+      allow list: if isEmailVerified() && resource.data.status is string;
+      allow create: if isEmailVerified() && isValidId(memberId) && isValidMember(incoming());
+      allow update: if isEmailVerified() && isValidId(memberId) && isValidMember(incoming())
+        && incoming().registeredAt == existing().registeredAt; // Immutability guard
+      allow delete: if isEmailVerified() && isValidId(memberId);
+    }
+
+    // Attendance Collection
+    match /attendance/{attendanceId} {
+      allow get: if isEmailVerified() && isValidId(attendanceId);
+      allow list: if isEmailVerified() && resource.data.status is string;
+      allow create: if isEmailVerified() && isValidId(attendanceId) && isValidAttendance(incoming());
+      allow update: if isEmailVerified() && isValidId(attendanceId) && isValidAttendance(incoming())
+        && incoming().memberId == existing().memberId; // Immutability guard
+      allow delete: if isEmailVerified() && isValidId(attendanceId);
+    }
+
+    // Finances Collection
+    match /finances/{financeId} {
+      allow get: if isEmailVerified() && isValidId(financeId);
+      allow list: if isEmailVerified() && resource.data.type is string;
+      allow create: if isEmailVerified() && isValidId(financeId) && isValidFinance(incoming());
+      allow update: if isEmailVerified() && isValidId(financeId) && isValidFinance(incoming())
+        && incoming().recordedAt == existing().recordedAt; // Immutability guard
+      allow delete: if isEmailVerified() && isValidId(financeId);
+    }
+
+    // Departments Collection
+    match /departments/{departmentId} {
+      allow get: if isEmailVerified() && isValidId(departmentId);
+      allow list: if isEmailVerified() && resource.data.name is string;
+      allow create: if isEmailVerified() && isValidId(departmentId) && isValidDepartment(incoming());
+      allow update: if isEmailVerified() && isValidId(departmentId) && isValidDepartment(incoming());
+      allow delete: if isEmailVerified() && isValidId(departmentId);
+    }
+
+    // Events Collection
+    match /events/{eventId} {
+      allow get: if isEmailVerified() && isValidId(eventId);
+      allow list: if isEmailVerified() && resource.data.title is string;
+      allow create: if isEmailVerified() && isValidId(eventId) && isValidEvent(incoming());
+      allow update: if isEmailVerified() && isValidId(eventId) && isValidEvent(incoming())
+        && incoming().createdAt == existing().createdAt; // Immutability guard
+      allow delete: if isEmailVerified() && isValidId(eventId);
+    }
+  }
+}

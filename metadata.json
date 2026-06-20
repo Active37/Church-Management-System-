@@ -1,0 +1,6 @@
+{
+  "name": "Church Management System",
+  "description": "Comprehensive church management solution focusing on member tracking, profiles, real-time attendance, ministries/departments (choir, ushers, media), events registration, and secure financial records (tithes, offerings, donations) with dynamic charts and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
